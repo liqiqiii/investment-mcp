@@ -4,116 +4,410 @@
 
 {% block content %}
 
-{# ── Instrument Header ── #}
-<div class="section">
-  <h2 class="section-title">{{ instrument.name }}</h2>
-  {% if instrument.description %}
-  <p style="color: var(--text-dim); margin-bottom: 1rem;">{{ instrument.description }}</p>
-  {% endif %}
+<style>
+  /* ── Detail page overrides ── */
+  :root {
+    --d-bg:      #0a0e17;
+    --d-card:    #111827;
+    --d-border:  #1e293b;
+    --d-blue:    #3b82f6;
+    --d-green:   #10b981;
+    --d-red:     #ef4444;
+    --d-text:    #f1f5f9;
+    --d-dim:     #94a3b8;
+    --d-mono:    'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  }
+
+  /* ── Back link ── */
+  .detail-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--d-dim);
+    margin-bottom: 1.25rem;
+    transition: color 0.15s;
+  }
+  .detail-back:hover { color: var(--d-blue); text-decoration: none; }
+  .detail-back svg { width: 14px; height: 14px; }
+
+  /* ── Hero header ── */
+  .detail-hero {
+    background: var(--d-card);
+    border: 1px solid var(--d-border);
+    border-radius: 12px;
+    padding: 1.75rem 2rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .detail-hero-left { display: flex; flex-direction: column; gap: 0.4rem; }
+  .detail-hero-name {
+    font-size: 1.65rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+  }
+  .detail-hero-badge {
+    display: inline-block;
+    background: var(--d-blue);
+    color: #fff;
+    font-family: var(--d-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    width: fit-content;
+  }
+  .detail-hero-right { text-align: right; }
+  .detail-hero-price {
+    font-family: var(--d-mono);
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.1;
+  }
+  .detail-hero-change {
+    font-family: var(--d-mono);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 0.25rem;
+  }
+  .detail-hero-change.up   { color: var(--d-green); }
+  .detail-hero-change.down { color: var(--d-red); }
+
+  /* ── Stats bar ── */
+  .detail-stats {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .detail-stats::-webkit-scrollbar { display: none; }
+  .detail-stat-card {
+    flex: 1 0 0;
+    min-width: 130px;
+    background: var(--d-card);
+    border: 1px solid var(--d-border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    text-align: center;
+  }
+  .detail-stat-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--d-dim);
+    margin-bottom: 0.3rem;
+  }
+  .detail-stat-val {
+    font-family: var(--d-mono);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #fff;
+  }
+  .detail-stat-val.up   { color: var(--d-green); }
+  .detail-stat-val.down { color: var(--d-red); }
+
+  @media (max-width: 700px) {
+    .detail-stats { flex-wrap: wrap; }
+    .detail-stat-card { min-width: calc(50% - 0.5rem); flex: 0 0 calc(50% - 0.375rem); }
+    .detail-hero { padding: 1.25rem; }
+    .detail-hero-price { font-size: 1.8rem; }
+  }
+
+  /* ── Chart section ── */
+  .detail-chart-wrap {
+    background: var(--d-card);
+    border: 1px solid var(--d-border);
+    border-radius: 12px;
+    padding: 1rem 1rem 0.5rem;
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+  }
+  .detail-chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .detail-chart-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fff;
+  }
+  .detail-range-btns {
+    display: flex;
+    gap: 0.3rem;
+  }
+  .detail-range-btns button {
+    background: var(--d-border);
+    color: var(--d-dim);
+    border: none;
+    border-radius: 5px;
+    padding: 0.3rem 0.65rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .detail-range-btns button:hover,
+  .detail-range-btns button.active {
+    background: var(--d-blue);
+    color: #fff;
+  }
+  #detail-chart { width: 100%; min-height: 450px; }
+
+  /* ── Recent data table ── */
+  .detail-table-wrap {
+    background: var(--d-card);
+    border: 1px solid var(--d-border);
+    border-radius: 12px;
+    padding: 1rem;
+    overflow-x: auto;
+  }
+  .detail-table-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 0.75rem;
+  }
+  .detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+  .detail-table th {
+    color: var(--d-dim);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.68rem;
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid var(--d-border);
+    text-align: right;
+  }
+  .detail-table th:first-child { text-align: left; }
+  .detail-table td {
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid var(--d-border);
+    text-align: right;
+    color: var(--d-text);
+  }
+  .detail-table td:first-child { text-align: left; color: var(--d-dim); }
+  .detail-table td.mono {
+    font-family: var(--d-mono);
+    font-weight: 500;
+  }
+  .detail-table tbody tr {
+    transition: background 0.12s;
+  }
+  .detail-table tbody tr:hover { background: rgba(59,130,246,0.06); }
+  .detail-table tbody tr:last-child td { border-bottom: none; }
+  .detail-table .up   { color: var(--d-green); }
+  .detail-table .down { color: var(--d-red); }
+</style>
+
+{# ── Back to dashboard ── #}
+<a href="/" class="detail-back">
+  <svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M9.78 4.22a.75.75 0 0 1 0 1.06L7.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L5.47 8.53a.75.75 0 0 1 0-1.06l3.25-3.25a.75.75 0 0 1 1.06 0z"/></svg>
+  Back to Dashboard
+</a>
+
+{# ── Hero Header ── #}
+<div class="detail-hero">
+  <div class="detail-hero-left">
+    <span class="detail-hero-badge">{{ instrument.symbol }}</span>
+    <h1 class="detail-hero-name">{{ instrument.name }}</h1>
+  </div>
+  <div class="detail-hero-right">
+    <div class="detail-hero-price">
+      {% if stats.current is not none %}
+        {{ "%.4f" | format(stats.current) }}
+      {% else %}
+        —
+      {% endif %}
+    </div>
+    {% if stats.pct_change is not none %}
+    <div class="detail-hero-change {{ 'up' if stats.pct_change >= 0 else 'down' }}">
+      {{ "+" if stats.pct_change >= 0 }}{{ "%.2f" | format(stats.pct_change) }}%
+    </div>
+    {% endif %}
+  </div>
 </div>
 
-{# ── Statistics Summary ── #}
-<div class="section">
-  <div class="stats-grid">
-    <div class="stat-item">
-      <div class="stat-label">Current</div>
-      <div class="stat-value">{{ "%.4f" | format(stats.current) if stats.current is not none else "N/A" }}</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-label">Min</div>
-      <div class="stat-value">{{ "%.4f" | format(stats.min) if stats.min is not none else "N/A" }}</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-label">Max</div>
-      <div class="stat-value">{{ "%.4f" | format(stats.max) if stats.max is not none else "N/A" }}</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-label">Mean</div>
-      <div class="stat-value">{{ "%.4f" | format(stats.mean) if stats.mean is not none else "N/A" }}</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-label">% Change</div>
-      <div class="stat-value {{ 'positive' if stats.pct_change is not none and stats.pct_change >= 0 else 'negative' }}">
-        {% if stats.pct_change is not none %}
-          {{ "+" if stats.pct_change >= 0 }}{{ "%.2f" | format(stats.pct_change) }}%
-        {% else %}
-          N/A
-        {% endif %}
-      </div>
+{# ── Stats Bar ── #}
+<div class="detail-stats">
+  <div class="detail-stat-card">
+    <div class="detail-stat-label">Current</div>
+    <div class="detail-stat-val">{{ "%.4f" | format(stats.current) if stats.current is not none else "N/A" }}</div>
+  </div>
+  <div class="detail-stat-card">
+    <div class="detail-stat-label">Min</div>
+    <div class="detail-stat-val">{{ "%.4f" | format(stats.min) if stats.min is not none else "N/A" }}</div>
+  </div>
+  <div class="detail-stat-card">
+    <div class="detail-stat-label">Max</div>
+    <div class="detail-stat-val">{{ "%.4f" | format(stats.max) if stats.max is not none else "N/A" }}</div>
+  </div>
+  <div class="detail-stat-card">
+    <div class="detail-stat-label">Mean</div>
+    <div class="detail-stat-val">{{ "%.4f" | format(stats.mean) if stats.mean is not none else "N/A" }}</div>
+  </div>
+  <div class="detail-stat-card">
+    <div class="detail-stat-label">% Change</div>
+    <div class="detail-stat-val {{ 'up' if stats.pct_change is not none and stats.pct_change >= 0 else 'down' if stats.pct_change is not none else '' }}">
+      {% if stats.pct_change is not none %}
+        {{ "+" if stats.pct_change >= 0 }}{{ "%.2f" | format(stats.pct_change) }}%
+      {% else %}
+        N/A
+      {% endif %}
     </div>
   </div>
 </div>
 
 {# ── Main Chart ── #}
-<div class="section">
-  <div class="chart-wrapper">
-    <div class="chart-title">Price History</div>
-    <div id="detail-chart" class="chart-area" style="min-height: 380px;"></div>
+<div class="detail-chart-wrap">
+  <div class="detail-chart-header">
+    <span class="detail-chart-title">Price History</span>
+    <div class="detail-range-btns">
+      <button data-range="7" >7 D</button>
+      <button data-range="30">1 M</button>
+      <button data-range="90">3 M</button>
+      <button data-range="180">6 M</button>
+      <button data-range="365">1 Y</button>
+      <button data-range="all" class="active">All</button>
+    </div>
   </div>
+  <div id="detail-chart"></div>
 </div>
 
 {# ── Recent Data Table ── #}
-<div class="section">
-  <h2 class="section-title">Recent Data</h2>
-  <div class="card" style="overflow-x: auto;">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Value</th>
-          <th>Change</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in recent_data %}
-        <tr>
-          <td>{{ row.date }}</td>
-          <td>{{ "%.4f" | format(row.value) }}</td>
-          <td class="{{ 'positive' if row.change is defined and row.change is not none and row.change >= 0 else 'negative' }}">
-            {% if row.change is defined and row.change is not none %}
-              {{ "+" if row.change >= 0 }}{{ "%.4f" | format(row.change) }}
-            {% else %}
-              —
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+<div class="detail-table-wrap">
+  <div class="detail-table-title">Recent Data</div>
+  <table class="detail-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Value</th>
+        <th>Change</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in recent_data %}
+      <tr>
+        <td>{{ row.date }}</td>
+        <td class="mono">{{ "%.4f" | format(row.value) }}</td>
+        <td class="mono {{ 'up' if row.change is defined and row.change is not none and row.change >= 0 else 'down' if row.change is defined and row.change is not none else '' }}">
+          {% if row.change is defined and row.change is not none %}
+            {{ "+" if row.change >= 0 }}{{ "%.4f" | format(row.change) }}
+          {% else %}
+            —
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 
 {% endblock %}
 
 {% block scripts %}
 <script>
+(function () {
+  /* ── Chart theme matching new palette ── */
+  var COLORS = {
+    card:   "#111827",
+    border: "#1e293b",
+    bg:     "#0a0e17",
+    blue:   "#3b82f6",
+    text:   "#f1f5f9",
+    dim:    "#94a3b8"
+  };
+
   var darkLayout = {
     paper_bgcolor: "rgba(0,0,0,0)",
-    plot_bgcolor:  "#16213e",
-    font: { color: "#e0e0e0", size: 12 },
-    margin: { l: 56, r: 16, t: 24, b: 48 },
+    plot_bgcolor:  COLORS.card,
+    font: { color: COLORS.text, size: 12 },
+    margin: { l: 56, r: 16, t: 16, b: 48 },
     xaxis: {
-      gridcolor: "#0f3460",
-      zerolinecolor: "#0f3460",
-      rangeslider: { visible: true, bgcolor: "#1a1a2e", bordercolor: "#0f3460" }
+      gridcolor:     COLORS.border,
+      zerolinecolor: COLORS.border,
+      linecolor:     COLORS.border,
+      tickfont:      { color: COLORS.dim, size: 11 },
+      rangeslider:   { visible: true, bgcolor: COLORS.bg, bordercolor: COLORS.border, thickness: 0.08 }
     },
-    yaxis: { gridcolor: "#0f3460", zerolinecolor: "#0f3460" },
-    autosize: true
+    yaxis: {
+      gridcolor:     COLORS.border,
+      zerolinecolor: COLORS.border,
+      linecolor:     COLORS.border,
+      tickfont:      { color: COLORS.dim, size: 11 }
+    },
+    autosize: true,
+    dragmode: "zoom",
+    hovermode: "x unified",
+    hoverlabel: {
+      bgcolor: COLORS.card,
+      bordercolor: COLORS.border,
+      font: { color: COLORS.text, size: 12 }
+    }
   };
 
   var plotlyConfig = {
     responsive: true,
     displayModeBar: true,
-    modeBarButtonsToRemove: ["lasso2d", "select2d"]
+    modeBarButtonsToRemove: ["lasso2d", "select2d"],
+    displaylogo: false
   };
 
   var fig = JSON.parse('{{ chart_json | safe }}');
-  var layout = Object.assign({}, darkLayout, fig.layout || {});
 
-  Plotly.newPlot("detail-chart", fig.data || [], layout, plotlyConfig);
+  /* Apply blue line color to traces if not set */
+  (fig.data || []).forEach(function (trace) {
+    if (!trace.line) trace.line = {};
+    if (!trace.line.color) trace.line.color = COLORS.blue;
+  });
+
+  var layout = Object.assign({}, darkLayout, fig.layout || {});
+  var chartEl = document.getElementById("detail-chart");
+
+  Plotly.newPlot(chartEl, fig.data || [], layout, plotlyConfig);
 
   window.addEventListener("resize", function () {
-    Plotly.Plots.resize(document.getElementById("detail-chart"));
+    Plotly.Plots.resize(chartEl);
   });
+
+  /* ── Date range buttons ── */
+  var rangeButtons = document.querySelectorAll(".detail-range-btns button");
+  rangeButtons.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      rangeButtons.forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      var range = btn.getAttribute("data-range");
+      if (range === "all") {
+        Plotly.relayout(chartEl, { "xaxis.autorange": true });
+      } else {
+        var days = parseInt(range, 10);
+        var end = new Date();
+        var start = new Date();
+        start.setDate(end.getDate() - days);
+        Plotly.relayout(chartEl, {
+          "xaxis.range": [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)],
+          "xaxis.autorange": false
+        });
+      }
+    });
+  });
+})();
 </script>
 {% endblock %}

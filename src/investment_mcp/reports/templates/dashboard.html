@@ -4,102 +4,271 @@
 
 {% block content %}
 
-{# ── Summary Cards ── #}
-<div class="section">
-  <h2 class="section-title">Summary</h2>
-  <div class="grid grid-4">
+{# ── Market Ticker Bar ── #}
+{% if summary_cards %}
+<div class="ticker-bar">
+  <div class="ticker-track">
     {% for card in summary_cards %}
-    <div class="card">
-      <h3>{{ card.label }}</h3>
-      <div class="value">{{ card.value }}</div>
-      {% if card.change is defined and card.change is not none %}
-      <div class="change {{ 'positive' if card.change >= 0 else 'negative' }}">
-        {{ "+" if card.change >= 0 }}{{ "%.2f" | format(card.change) }}%
-      </div>
+    <div class="ticker-item">
+      <span class="ticker-label">{{ card.label }}</span>
+      <span class="ticker-price">{{ card.value }}</span>
+      {% if card.change is not none or card.pct_change is not none %}
+      <span class="ticker-change {{ 'positive' if (card.change is not none and card.change >= 0) or (card.change is none and card.pct_change is not none and card.pct_change >= 0) else 'negative' }}">
+        {%- if card.change is not none %}{{ "+" if card.change >= 0 }}{{ "%.2f"|format(card.change) }}{% endif %}
+        {%- if card.pct_change is not none %} ({{ "+" if card.pct_change >= 0 }}{{ "%.2f"|format(card.pct_change) }}%){% endif -%}
+      </span>
       {% endif %}
     </div>
     {% endfor %}
   </div>
 </div>
+{% endif %}
 
-{# ── Macro Overview ── #}
+{# ── Summary Cards Grid ── #}
+{% if summary_cards %}
+<div class="section">
+  <h2 class="section-title">Market Overview</h2>
+  <div class="summary-grid">
+    {% for card in summary_cards %}
+    <div class="summary-card">
+      <div class="summary-card-header">
+        <span class="ticker-symbol">{{ card.label.split(' ')[0][:5] | upper }}</span>
+        <span class="company-name">{{ card.label }}</span>
+      </div>
+      <div class="summary-card-price">{{ card.value }}</div>
+      <div class="summary-card-change">
+        {% if card.change is not none or card.pct_change is not none %}
+        <span class="{{ 'positive' if (card.change is not none and card.change >= 0) or (card.change is none and card.pct_change is not none and card.pct_change >= 0) else 'negative' }}">
+          {%- if card.change is not none %}{{ "+" if card.change >= 0 }}{{ "%.2f"|format(card.change) }}{% endif %}
+          {%- if card.pct_change is not none %} ({{ "+" if card.pct_change >= 0 }}{{ "%.2f"|format(card.pct_change) }}%){% endif -%}
+        </span>
+        {% else %}
+        <span class="no-change">&mdash;</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# ── Macro Overview (only if charts exist) ── #}
+{% set macro_charts = charts | selectattr("section", "equalto", "macro") | list %}
+{% if macro_charts %}
 <div class="section">
   <h2 class="section-title">Macro Overview</h2>
-  <div class="grid grid-2">
-    {% for chart in charts if chart.section == "macro" %}
+  <div class="chart-grid chart-grid-2">
+    {% for chart in macro_charts %}
     <div class="chart-wrapper">
       <div class="chart-title">{{ chart.title }}</div>
-      <div id="{{ chart.div_id }}" class="chart-area"></div>
+      <div id="{{ chart.div_id }}" class="chart-area chart-area-lg"></div>
     </div>
     {% endfor %}
   </div>
 </div>
+{% endif %}
 
-{# ── Tanker Stocks ── #}
+{# ── Tanker Stocks (only if charts exist) ── #}
+{% set tanker_charts = charts | selectattr("section", "equalto", "tanker") | list %}
+{% if tanker_charts %}
 <div class="section">
   <h2 class="section-title">Tanker Stocks</h2>
-  <div class="grid grid-3">
-    {% for chart in charts if chart.section == "tanker" %}
+  <div class="chart-grid chart-grid-3">
+    {% for chart in tanker_charts %}
     <div class="chart-wrapper">
       <div class="chart-title">{{ chart.title }}</div>
-      <div id="{{ chart.div_id }}" class="chart-area"></div>
+      <div id="{{ chart.div_id }}" class="chart-area chart-area-lg"></div>
     </div>
     {% endfor %}
   </div>
 </div>
+{% endif %}
 
-{# ── Shipping Indices ── #}
+{# ── Shipping Indices (only if charts exist) ── #}
+{% set shipping_charts = charts | selectattr("section", "equalto", "shipping") | list %}
+{% if shipping_charts %}
 <div class="section">
   <h2 class="section-title">Shipping Indices</h2>
-  <div class="grid grid-2">
-    {% for chart in charts if chart.section == "shipping" %}
+  <div class="chart-grid chart-grid-2">
+    {% for chart in shipping_charts %}
     <div class="chart-wrapper">
       <div class="chart-title">{{ chart.title }}</div>
-      <div id="{{ chart.div_id }}" class="chart-area"></div>
+      <div id="{{ chart.div_id }}" class="chart-area chart-area-lg"></div>
     </div>
     {% endfor %}
   </div>
 </div>
+{% endif %}
+
+<style>
+  /* ── Ticker Bar ── */
+  .ticker-bar {
+    background: #0d1117;
+    border-bottom: 1px solid var(--accent);
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    padding: 0.5rem 0;
+    margin: calc(-1 * var(--gap)) calc(-1 * var(--gap)) var(--gap);
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) transparent;
+  }
+  .ticker-bar::-webkit-scrollbar { height: 4px; }
+  .ticker-bar::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
+  .ticker-track {
+    display: inline-flex;
+    gap: 1.5rem;
+    padding: 0 var(--gap);
+  }
+  .ticker-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+  }
+  .ticker-label {
+    color: var(--text-dim);
+    font-weight: 600;
+  }
+  .ticker-price {
+    color: #fff;
+    font-family: "SF Mono", "Cascadia Code", "Consolas", monospace;
+  }
+  .ticker-change {
+    font-family: "SF Mono", "Cascadia Code", "Consolas", monospace;
+    font-size: 0.75rem;
+  }
+
+  /* ── Summary Cards Grid ── */
+  .summary-grid {
+    display: grid;
+    gap: var(--gap);
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 480px)  { .summary-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 768px)  { .summary-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (min-width: 1100px) { .summary-grid { grid-template-columns: repeat(4, 1fr); } }
+
+  .summary-card {
+    background: var(--card);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 1rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    transition: border-color 0.15s;
+  }
+  .summary-card:hover { border-color: var(--green); }
+
+  .summary-card-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .ticker-symbol {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .company-name {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .summary-card-price {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    font-family: "SF Mono", "Cascadia Code", "Consolas", monospace;
+    letter-spacing: -0.02em;
+  }
+
+  .summary-card-change {
+    font-size: 0.85rem;
+    font-family: "SF Mono", "Cascadia Code", "Consolas", monospace;
+  }
+  .summary-card-change .no-change { color: var(--text-dim); }
+
+  /* ── Chart Grids ── */
+  .chart-grid {
+    display: grid;
+    gap: var(--gap);
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 768px) {
+    .chart-grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .chart-grid-3 { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (min-width: 1100px) {
+    .chart-grid-3 { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  .chart-area-lg { min-height: 280px; }
+  @media (min-width: 768px) { .chart-area-lg { min-height: 320px; } }
+</style>
 
 {% endblock %}
 
 {% block scripts %}
 <script>
-  // Dark-theme Plotly layout defaults
-  var darkLayout = {
-    paper_bgcolor: "rgba(0,0,0,0)",
-    plot_bgcolor:  "#16213e",
-    font: { color: "#e0e0e0", size: 12 },
-    margin: { l: 48, r: 16, t: 32, b: 40 },
-    xaxis: { gridcolor: "#0f3460", zerolinecolor: "#0f3460" },
-    yaxis: { gridcolor: "#0f3460", zerolinecolor: "#0f3460" },
-    autosize: true
-  };
+  (function () {
+    var DARK_LAYOUT = {
+      paper_bgcolor: "#0a0e17",
+      plot_bgcolor:  "#111827",
+      font: { color: "#e0e0e0", size: 12, family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" },
+      margin: { l: 50, r: 16, t: 32, b: 44 },
+      xaxis: { gridcolor: "#1e293b", zerolinecolor: "#1e293b", linecolor: "#1e293b" },
+      yaxis: { gridcolor: "#1e293b", zerolinecolor: "#1e293b", linecolor: "#1e293b" },
+      autosize: true,
+      hoverlabel: { bgcolor: "#1e293b", font: { color: "#e0e0e0" } }
+    };
 
-  var plotlyConfig = {
-    responsive: true,
-    displayModeBar: false
-  };
+    var PLOTLY_CFG = { responsive: true, displayModeBar: false };
 
-  // Chart configs injected by the backend
-  var charts = {{ charts | tojson }};
+    var charts = {{ charts | tojson }};
 
-  charts.forEach(function (cfg) {
-    var el = document.getElementById(cfg.div_id);
-    if (!el) return;
+    function deepMerge(target, source) {
+      var result = Object.assign({}, target);
+      for (var key in source) {
+        if (source.hasOwnProperty(key)) {
+          if (source[key] && typeof source[key] === "object" && !Array.isArray(source[key])
+              && target[key] && typeof target[key] === "object" && !Array.isArray(target[key])) {
+            result[key] = deepMerge(target[key], source[key]);
+          } else {
+            result[key] = source[key];
+          }
+        }
+      }
+      return result;
+    }
 
-    var fig = JSON.parse(cfg.plotly_json);
-    var layout = Object.assign({}, darkLayout, fig.layout || {});
-
-    Plotly.newPlot(el, fig.data || [], layout, plotlyConfig);
-  });
-
-  // Reflow charts on window resize for responsive behavior
-  window.addEventListener("resize", function () {
     charts.forEach(function (cfg) {
       var el = document.getElementById(cfg.div_id);
-      if (el) Plotly.Plots.resize(el);
+      if (!el) return;
+
+      var fig;
+      try { fig = JSON.parse(cfg.plotly_json); } catch (e) { return; }
+
+      var layout = deepMerge(DARK_LAYOUT, fig.layout || {});
+      // Force dark backgrounds regardless of what the backend set
+      layout.paper_bgcolor = DARK_LAYOUT.paper_bgcolor;
+      layout.plot_bgcolor  = DARK_LAYOUT.plot_bgcolor;
+
+      Plotly.newPlot(el, fig.data || [], layout, PLOTLY_CFG);
     });
-  });
+
+    window.addEventListener("resize", function () {
+      charts.forEach(function (cfg) {
+        var el = document.getElementById(cfg.div_id);
+        if (el && el.data) Plotly.Plots.resize(el);
+      });
+    });
+  })();
 </script>
 {% endblock %}

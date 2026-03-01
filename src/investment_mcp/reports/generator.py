@@ -17,11 +17,11 @@ from jinja2 import Environment, FileSystemLoader
 # ---------------------------------------------------------------------------
 # Dark-theme constants shared across every chart
 # ---------------------------------------------------------------------------
-PAPER_BG = "#1a1a2e"
-PLOT_BG = "#16213e"
-FONT_COLOR = "#e0e0e0"
-GRID_COLOR = "#2a2a4a"
-DEFAULT_COLOR = "#00b4d8"
+PAPER_BG = "#0a0e17"
+PLOT_BG = "#111827"
+FONT_COLOR = "#f1f5f9"
+GRID_COLOR = "#1e293b"
+DEFAULT_COLOR = "#3b82f6"
 
 PALETTE = [
     "#00b4d8",

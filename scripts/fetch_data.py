@@ -222,7 +222,19 @@ def _generate_reports(
 
         latest = chart_df.iloc[-1][col] if not chart_df.empty else None
         if latest is not None:
-            summary_cards.append({"label": instrument.name, "value": f"{latest:,.2f}"})
+            change = None
+            pct_change = None
+            if len(chart_df) >= 2:
+                prev = float(chart_df.iloc[-2][col])
+                curr = float(latest)
+                change = curr - prev
+                pct_change = (change / prev * 100) if prev != 0 else 0.0
+            summary_cards.append({
+                "label": instrument.name,
+                "value": f"{latest:,.2f}",
+                "change": round(change, 2) if change is not None else None,
+                "pct_change": round(pct_change, 2) if pct_change is not None else None,
+            })
 
     if charts:
         gen.generate_dashboard(

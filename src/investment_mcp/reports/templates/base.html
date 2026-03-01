@@ -4,159 +4,368 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Investment Dashboard{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.plot.ly/plotly-2.29.1.min.js"></script>
   <style>
-    /* ---------- Reset & base ---------- */
+    /* ========== Reset ========== */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:       #1a1a2e;
-      --card:     #16213e;
-      --accent:   #0f3460;
-      --text:     #e0e0e0;
-      --text-dim: #8a8a9a;
-      --green:    #00b894;
-      --red:      #d63031;
-      --radius:   8px;
-      --gap:      16px;
+      --bg:          #0a0e17;
+      --bg-surface:  #0f1420;
+      --card:        #111827;
+      --card-hover:  #162031;
+      --border:      #1e293b;
+      --border-glow: #253349;
+      --accent:      #3b82f6;
+      --accent-dim:  #2563eb;
+      --accent-glow: rgba(59, 130, 246, 0.15);
+      --purple:      #8b5cf6;
+      --text:        #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-dim:    #94a3b8;
+      --text-muted:  #64748b;
+      --green:       #10b981;
+      --green-dim:   rgba(16, 185, 129, 0.12);
+      --red:         #ef4444;
+      --red-dim:     rgba(239, 68, 68, 0.12);
+      --yellow:      #f59e0b;
+      --radius:      10px;
+      --radius-sm:   6px;
+      --gap:         16px;
+      --header-h:    48px;
+      --font:        'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --mono:        'JetBrains Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
     }
 
-    html { font-size: 14px; }
-    @media (min-width: 768px) { html { font-size: 15px; } }
-    @media (min-width: 1200px) { html { font-size: 16px; } }
+    html { font-size: 14px; scroll-behavior: smooth; }
+    @media (min-width: 768px)  { html { font-size: 14.5px; } }
+    @media (min-width: 1200px) { html { font-size: 15px; } }
 
+    /* ========== Custom scrollbar ========== */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    * { scrollbar-width: thin; scrollbar-color: #1e293b var(--bg); }
+
+    /* ========== Body ========== */
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: var(--font);
       background: var(--bg);
       color: var(--text);
-      line-height: 1.6;
+      line-height: 1.55;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
-    a { color: var(--green); text-decoration: none; }
-    a:hover { text-decoration: underline; }
+    a { color: var(--accent); text-decoration: none; transition: color 0.15s; }
+    a:hover { color: #60a5fa; }
 
-    /* ---------- Header ---------- */
+    /* ========== Header ========== */
     .nav-header {
-      background: var(--card);
-      border-bottom: 2px solid var(--accent);
-      padding: 0.75rem var(--gap);
+      background: rgba(17, 24, 39, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      height: var(--header-h);
       display: flex;
       align-items: center;
       justify-content: space-between;
       position: sticky;
       top: 0;
-      z-index: 100;
+      z-index: 1000;
+    }
+
+    .nav-header::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--purple) 50%, var(--accent) 100%);
+      opacity: 0.6;
     }
 
     .nav-header .brand {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #fff;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text);
+      letter-spacing: -0.01em;
     }
 
-    .nav-header .brand .icon {
-      font-size: 1.4rem;
+    .nav-header .brand-icon {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      color: #fff;
+      font-weight: 800;
+      flex-shrink: 0;
     }
 
-    .nav-header nav { display: flex; gap: 1rem; }
-    .nav-header nav a { color: var(--text-dim); font-size: 0.9rem; }
-    .nav-header nav a:hover { color: #fff; text-decoration: none; }
+    .nav-header .brand-text {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
 
-    /* ---------- Main content ---------- */
+    .nav-header .brand-text .label {
+      color: var(--text-dim);
+      font-weight: 400;
+      font-size: 0.8rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .nav-header nav { display: flex; align-items: center; gap: 4px; }
+
+    .nav-header nav a {
+      color: var(--text-dim);
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      transition: all 0.15s;
+    }
+
+    .nav-header nav a:hover {
+      color: var(--text);
+      background: rgba(59, 130, 246, 0.08);
+    }
+
+    .nav-header nav a.active {
+      color: var(--accent);
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    /* ========== Main content — full width terminal style ========== */
     .main-content {
       flex: 1;
       width: 100%;
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: var(--gap);
+      padding: 20px;
     }
 
-    /* ---------- Grid helpers ---------- */
+    @media (min-width: 1200px) { .main-content { padding: 24px 28px; } }
+
+    /* ========== Grid system ========== */
     .grid {
       display: grid;
       gap: var(--gap);
     }
 
     .grid-1 { grid-template-columns: 1fr; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: 1fr; }
+    .grid-4 { grid-template-columns: 1fr; }
 
-    @media (min-width: 600px) {
+    @media (min-width: 640px) {
       .grid-2 { grid-template-columns: repeat(2, 1fr); }
+      .grid-3 { grid-template-columns: repeat(2, 1fr); }
+      .grid-4 { grid-template-columns: repeat(2, 1fr); }
     }
 
-    @media (min-width: 900px) {
+    @media (min-width: 960px) {
       .grid-3 { grid-template-columns: repeat(3, 1fr); }
+      .grid-4 { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (min-width: 1280px) {
       .grid-4 { grid-template-columns: repeat(4, 1fr); }
     }
 
-    @media (min-width: 1200px) {
-      .grid-4 { grid-template-columns: repeat(4, 1fr); }
-    }
-
-    /* ---------- Card ---------- */
+    /* ========== Cards — glassmorphism ========== */
     .card {
-      background: var(--card);
-      border: 1px solid var(--accent);
+      background: rgba(17, 24, 39, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 1rem;
+      padding: 1rem 1.15rem;
       overflow: hidden;
+      position: relative;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-glow);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(59, 130, 246, 0.05);
     }
 
     .card h3 {
-      font-size: 0.85rem;
+      font-size: 0.7rem;
+      font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
       color: var(--text-dim);
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.6rem;
     }
 
     .card .value {
-      font-size: 1.5rem;
+      font-family: var(--mono);
+      font-size: 1.65rem;
       font-weight: 700;
       color: #fff;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
     }
 
     .card .change {
-      font-size: 0.9rem;
-      margin-top: 0.25rem;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      font-weight: 500;
+      margin-top: 0.35rem;
     }
 
+    /* ========== Summary cards (ticker cards) ========== */
+    .summary-card {
+      background: rgba(17, 24, 39, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.15rem;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .summary-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-glow);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(59, 130, 246, 0.05);
+    }
+
+    .summary-card .ticker {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+    }
+
+    .summary-card .company-name {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-top: 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .summary-card .price {
+      font-family: var(--mono);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+      margin-top: 0.65rem;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .summary-card .price-change {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 0.3rem;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .summary-card .price-change .amount,
+    .summary-card .price-change .percent {
+      display: inline-block;
+    }
+
+    .summary-card.positive { border-left: 3px solid var(--green); }
+    .summary-card.positive .price-change { color: var(--green); }
+    .summary-card.positive::before {
+      content: '';
+      position: absolute;
+      top: 0; right: 0;
+      width: 80px; height: 80px;
+      background: radial-gradient(circle, var(--green-dim) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .summary-card.negative { border-left: 3px solid var(--red); }
+    .summary-card.negative .price-change { color: var(--red); }
+    .summary-card.negative::before {
+      content: '';
+      position: absolute;
+      top: 0; right: 0;
+      width: 80px; height: 80px;
+      background: radial-gradient(circle, var(--red-dim) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* ========== Positive / Negative utility ========== */
     .positive { color: var(--green); }
     .negative { color: var(--red); }
 
-    /* ---------- Section ---------- */
+    /* ========== Section ========== */
     .section {
       margin-bottom: 2rem;
     }
 
     .section-title {
-      font-size: 1.15rem;
+      font-size: 0.95rem;
       font-weight: 600;
-      color: #fff;
+      color: var(--text);
       margin-bottom: 1rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid var(--accent);
+      padding-left: 12px;
+      position: relative;
+      letter-spacing: -0.01em;
     }
 
-    /* ---------- Chart container ---------- */
+    .section-title::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 2px;
+      bottom: 2px;
+      width: 3px;
+      border-radius: 2px;
+      background: linear-gradient(180deg, var(--accent), var(--purple));
+    }
+
+    /* ========== Chart wrapper — maximize chart area ========== */
     .chart-wrapper {
-      background: var(--card);
-      border: 1px solid var(--accent);
+      background: rgba(17, 24, 39, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 0.75rem;
+      padding: 0.5rem;
       overflow: hidden;
+      transition: border-color 0.2s ease;
+    }
+
+    .chart-wrapper:hover {
+      border-color: var(--border-glow);
     }
 
     .chart-wrapper .chart-title {
-      font-size: 0.9rem;
+      font-size: 0.78rem;
       font-weight: 600;
-      color: #fff;
-      margin-bottom: 0.5rem;
+      color: var(--text-secondary);
+      padding: 0.3rem 0.5rem 0.25rem;
     }
 
     .chart-wrapper .chart-area {
@@ -164,85 +373,151 @@
       min-height: 280px;
     }
 
-    /* ---------- Table ---------- */
+    /* ========== Data table ========== */
     .data-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
     }
 
     .data-table th,
     .data-table td {
-      padding: 0.6rem 0.75rem;
+      padding: 0.55rem 0.75rem;
       text-align: right;
-      border-bottom: 1px solid var(--accent);
+      border-bottom: 1px solid var(--border);
     }
 
     .data-table th {
-      color: var(--text-dim);
+      color: var(--text-muted);
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
-      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      font-size: 0.68rem;
+      position: sticky;
+      top: 0;
+      background: var(--card);
     }
 
     .data-table th:first-child,
     .data-table td:first-child { text-align: left; }
 
-    .data-table tbody tr:hover { background: rgba(15, 52, 96, 0.4); }
+    .data-table td {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
 
-    /* ---------- Stats grid ---------- */
+    .data-table td:first-child {
+      font-family: var(--font);
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .data-table tbody tr {
+      transition: background 0.1s;
+    }
+
+    .data-table tbody tr:hover {
+      background: rgba(59, 130, 246, 0.04);
+    }
+
+    /* ========== Stats grid ========== */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 0.75rem;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.65rem;
     }
 
     .stat-item {
-      background: var(--accent);
-      border-radius: var(--radius);
-      padding: 0.75rem;
+      background: rgba(17, 24, 39, 0.6);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.65rem 0.8rem;
       text-align: center;
+      transition: border-color 0.15s;
+    }
+
+    .stat-item:hover {
+      border-color: var(--border-glow);
     }
 
     .stat-item .stat-label {
-      font-size: 0.7rem;
+      font-size: 0.65rem;
+      font-weight: 500;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-dim);
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
       margin-bottom: 0.25rem;
     }
 
     .stat-item .stat-value {
-      font-size: 1.1rem;
+      font-family: var(--mono);
+      font-size: 1.05rem;
       font-weight: 700;
       color: #fff;
     }
 
-    /* ---------- Footer ---------- */
-    .site-footer {
-      background: var(--card);
-      border-top: 1px solid var(--accent);
-      text-align: center;
-      padding: 0.75rem var(--gap);
-      font-size: 0.75rem;
-      color: var(--text-dim);
-      margin-top: auto;
+    /* ========== Badge / Tag ========== */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      font-family: var(--mono);
+      letter-spacing: 0.02em;
     }
 
-    /* ---------- Plotly overrides for dark theme ---------- */
-    .js-plotly-plot .plotly .modebar { right: 4px !important; }
+    .badge-green { background: var(--green-dim); color: var(--green); }
+    .badge-red   { background: var(--red-dim);   color: var(--red);   }
+
+    /* ========== Footer ========== */
+    .site-footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 10px 20px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: auto;
+      font-family: var(--mono);
+      letter-spacing: 0.01em;
+    }
+
+    /* ========== Plotly dark theme overrides ========== */
+    .js-plotly-plot .plotly .modebar { right: 4px !important; top: 2px !important; }
+    .js-plotly-plot .plotly .modebar-btn { color: var(--text-muted) !important; }
+    .js-plotly-plot .plotly .modebar-btn:hover { color: var(--text) !important; }
+    .js-plotly-plot .plotly .modebar-btn.active { color: var(--accent) !important; }
+
+    /* ========== Utility ========== */
+    .mono  { font-family: var(--mono); }
+    .dim   { color: var(--text-dim); }
+    .muted { color: var(--text-muted); }
+    .text-green { color: var(--green); }
+    .text-red   { color: var(--red); }
+    .text-accent { color: var(--accent); }
+    .fw-700 { font-weight: 700; }
+    .gap-sm { gap: 8px; }
+    .gap-md { gap: var(--gap); }
+    .mt-1 { margin-top: 0.5rem; }
+    .mt-2 { margin-top: 1rem; }
+    .mb-1 { margin-bottom: 0.5rem; }
+    .mb-2 { margin-bottom: 1rem; }
   </style>
 </head>
 <body>
 
   <header class="nav-header">
     <div class="brand">
-      <span class="icon">📈</span>
-      <span>Investment Dashboard</span>
+      <div class="brand-icon">ID</div>
+      <div class="brand-text">
+        <span>Investment Dashboard</span>
+        <span class="label">Terminal</span>
+      </div>
     </div>
     <nav>
-      <a href="/">Dashboard</a>
+      <a href="/" class="active">Dashboard</a>
     </nav>
   </header>
 
@@ -251,7 +526,7 @@
   </main>
 
   <footer class="site-footer">
-    Last updated: {{ last_updated | default("N/A") }} &mdash; Investment Dashboard
+    {{ last_updated | default("N/A") }}
   </footer>
 
   {% block scripts %}{% endblock %}
