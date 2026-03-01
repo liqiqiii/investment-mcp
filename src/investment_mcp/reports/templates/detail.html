@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}{{ instrument.name }} — Investment Dashboard{% endblock %}
+
+{% block content %}
+
+{# ── Instrument Header ── #}
+<div class="section">
+  <h2 class="section-title">{{ instrument.name }}</h2>
+  {% if instrument.description %}
+  <p style="color: var(--text-dim); margin-bottom: 1rem;">{{ instrument.description }}</p>
+  {% endif %}
+</div>
+
+{# ── Statistics Summary ── #}
+<div class="section">
+  <div class="stats-grid">
+    <div class="stat-item">
+      <div class="stat-label">Current</div>
+      <div class="stat-value">{{ "%.4f" | format(stats.current) if stats.current is not none else "N/A" }}</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">Min</div>
+      <div class="stat-value">{{ "%.4f" | format(stats.min) if stats.min is not none else "N/A" }}</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">Max</div>
+      <div class="stat-value">{{ "%.4f" | format(stats.max) if stats.max is not none else "N/A" }}</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">Mean</div>
+      <div class="stat-value">{{ "%.4f" | format(stats.mean) if stats.mean is not none else "N/A" }}</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">% Change</div>
+      <div class="stat-value {{ 'positive' if stats.pct_change is not none and stats.pct_change >= 0 else 'negative' }}">
+        {% if stats.pct_change is not none %}
+          {{ "+" if stats.pct_change >= 0 }}{{ "%.2f" | format(stats.pct_change) }}%
+        {% else %}
+          N/A
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Main Chart ── #}
+<div class="section">
+  <div class="chart-wrapper">
+    <div class="chart-title">Price History</div>
+    <div id="detail-chart" class="chart-area" style="min-height: 380px;"></div>
+  </div>
+</div>
+
+{# ── Recent Data Table ── #}
+<div class="section">
+  <h2 class="section-title">Recent Data</h2>
+  <div class="card" style="overflow-x: auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Value</th>
+          <th>Change</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in recent_data %}
+        <tr>
+          <td>{{ row.date }}</td>
+          <td>{{ "%.4f" | format(row.value) }}</td>
+          <td class="{{ 'positive' if row.change is defined and row.change is not none and row.change >= 0 else 'negative' }}">
+            {% if row.change is defined and row.change is not none %}
+              {{ "+" if row.change >= 0 }}{{ "%.4f" | format(row.change) }}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  var darkLayout = {
+    paper_bgcolor: "rgba(0,0,0,0)",
+    plot_bgcolor:  "#16213e",
+    font: { color: "#e0e0e0", size: 12 },
+    margin: { l: 56, r: 16, t: 24, b: 48 },
+    xaxis: {
+      gridcolor: "#0f3460",
+      zerolinecolor: "#0f3460",
+      rangeslider: { visible: true, bgcolor: "#1a1a2e", bordercolor: "#0f3460" }
+    },
+    yaxis: { gridcolor: "#0f3460", zerolinecolor: "#0f3460" },
+    autosize: true
+  };
+
+  var plotlyConfig = {
+    responsive: true,
+    displayModeBar: true,
+    modeBarButtonsToRemove: ["lasso2d", "select2d"]
+  };
+
+  var fig = JSON.parse('{{ chart_json | safe }}');
+  var layout = Object.assign({}, darkLayout, fig.layout || {});
+
+  Plotly.newPlot("detail-chart", fig.data || [], layout, plotlyConfig);
+
+  window.addEventListener("resize", function () {
+    Plotly.Plots.resize(document.getElementById("detail-chart"));
+  });
+</script>
+{% endblock %}

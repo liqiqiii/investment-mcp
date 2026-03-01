@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — Investment Dashboard{% endblock %}
+
+{% block content %}
+
+{# ── Summary Cards ── #}
+<div class="section">
+  <h2 class="section-title">Summary</h2>
+  <div class="grid grid-4">
+    {% for card in summary_cards %}
+    <div class="card">
+      <h3>{{ card.label }}</h3>
+      <div class="value">{{ card.value }}</div>
+      {% if card.change is defined and card.change is not none %}
+      <div class="change {{ 'positive' if card.change >= 0 else 'negative' }}">
+        {{ "+" if card.change >= 0 }}{{ "%.2f" | format(card.change) }}%
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{# ── Macro Overview ── #}
+<div class="section">
+  <h2 class="section-title">Macro Overview</h2>
+  <div class="grid grid-2">
+    {% for chart in charts if chart.section == "macro" %}
+    <div class="chart-wrapper">
+      <div class="chart-title">{{ chart.title }}</div>
+      <div id="{{ chart.div_id }}" class="chart-area"></div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{# ── Tanker Stocks ── #}
+<div class="section">
+  <h2 class="section-title">Tanker Stocks</h2>
+  <div class="grid grid-3">
+    {% for chart in charts if chart.section == "tanker" %}
+    <div class="chart-wrapper">
+      <div class="chart-title">{{ chart.title }}</div>
+      <div id="{{ chart.div_id }}" class="chart-area"></div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{# ── Shipping Indices ── #}
+<div class="section">
+  <h2 class="section-title">Shipping Indices</h2>
+  <div class="grid grid-2">
+    {% for chart in charts if chart.section == "shipping" %}
+    <div class="chart-wrapper">
+      <div class="chart-title">{{ chart.title }}</div>
+      <div id="{{ chart.div_id }}" class="chart-area"></div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Dark-theme Plotly layout defaults
+  var darkLayout = {
+    paper_bgcolor: "rgba(0,0,0,0)",
+    plot_bgcolor:  "#16213e",
+    font: { color: "#e0e0e0", size: 12 },
+    margin: { l: 48, r: 16, t: 32, b: 40 },
+    xaxis: { gridcolor: "#0f3460", zerolinecolor: "#0f3460" },
+    yaxis: { gridcolor: "#0f3460", zerolinecolor: "#0f3460" },
+    autosize: true
+  };
+
+  var plotlyConfig = {
+    responsive: true,
+    displayModeBar: false
+  };
+
+  // Chart configs injected by the backend
+  var charts = {{ charts | tojson }};
+
+  charts.forEach(function (cfg) {
+    var el = document.getElementById(cfg.div_id);
+    if (!el) return;
+
+    var fig = JSON.parse(cfg.plotly_json);
+    var layout = Object.assign({}, darkLayout, fig.layout || {});
+
+    Plotly.newPlot(el, fig.data || [], layout, plotlyConfig);
+  });
+
+  // Reflow charts on window resize for responsive behavior
+  window.addEventListener("resize", function () {
+    charts.forEach(function (cfg) {
+      var el = document.getElementById(cfg.div_id);
+      if (el) Plotly.Plots.resize(el);
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Investment Dashboard{% endblock %}</title>
+  <script src="https://cdn.plot.ly/plotly-2.29.1.min.js"></script>
+  <style>
+    /* ---------- Reset & base ---------- */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #1a1a2e;
+      --card:     #16213e;
+      --accent:   #0f3460;
+      --text:     #e0e0e0;
+      --text-dim: #8a8a9a;
+      --green:    #00b894;
+      --red:      #d63031;
+      --radius:   8px;
+      --gap:      16px;
+    }
+
+    html { font-size: 14px; }
+    @media (min-width: 768px) { html { font-size: 15px; } }
+    @media (min-width: 1200px) { html { font-size: 16px; } }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    a { color: var(--green); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ---------- Header ---------- */
+    .nav-header {
+      background: var(--card);
+      border-bottom: 2px solid var(--accent);
+      padding: 0.75rem var(--gap);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-header .brand {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-header .brand .icon {
+      font-size: 1.4rem;
+    }
+
+    .nav-header nav { display: flex; gap: 1rem; }
+    .nav-header nav a { color: var(--text-dim); font-size: 0.9rem; }
+    .nav-header nav a:hover { color: #fff; text-decoration: none; }
+
+    /* ---------- Main content ---------- */
+    .main-content {
+      flex: 1;
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: var(--gap);
+    }
+
+    /* ---------- Grid helpers ---------- */
+    .grid {
+      display: grid;
+      gap: var(--gap);
+    }
+
+    .grid-1 { grid-template-columns: 1fr; }
+
+    @media (min-width: 600px) {
+      .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (min-width: 900px) {
+      .grid-3 { grid-template-columns: repeat(3, 1fr); }
+      .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    @media (min-width: 1200px) {
+      .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    /* ---------- Card ---------- */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 1rem;
+      overflow: hidden;
+    }
+
+    .card h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      margin-bottom: 0.5rem;
+    }
+
+    .card .value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .card .change {
+      font-size: 0.9rem;
+      margin-top: 0.25rem;
+    }
+
+    .positive { color: var(--green); }
+    .negative { color: var(--red); }
+
+    /* ---------- Section ---------- */
+    .section {
+      margin-bottom: 2rem;
+    }
+
+    .section-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--accent);
+    }
+
+    /* ---------- Chart container ---------- */
+    .chart-wrapper {
+      background: var(--card);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 0.75rem;
+      overflow: hidden;
+    }
+
+    .chart-wrapper .chart-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .chart-wrapper .chart-area {
+      width: 100%;
+      min-height: 280px;
+    }
+
+    /* ---------- Table ---------- */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: 0.6rem 0.75rem;
+      text-align: right;
+      border-bottom: 1px solid var(--accent);
+    }
+
+    .data-table th {
+      color: var(--text-dim);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 0.75rem;
+    }
+
+    .data-table th:first-child,
+    .data-table td:first-child { text-align: left; }
+
+    .data-table tbody tr:hover { background: rgba(15, 52, 96, 0.4); }
+
+    /* ---------- Stats grid ---------- */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .stat-item {
+      background: var(--accent);
+      border-radius: var(--radius);
+      padding: 0.75rem;
+      text-align: center;
+    }
+
+    .stat-item .stat-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-item .stat-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* ---------- Footer ---------- */
+    .site-footer {
+      background: var(--card);
+      border-top: 1px solid var(--accent);
+      text-align: center;
+      padding: 0.75rem var(--gap);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-top: auto;
+    }
+
+    /* ---------- Plotly overrides for dark theme ---------- */
+    .js-plotly-plot .plotly .modebar { right: 4px !important; }
+  </style>
+</head>
+<body>
+
+  <header class="nav-header">
+    <div class="brand">
+      <span class="icon">📈</span>
+      <span>Investment Dashboard</span>
+    </div>
+    <nav>
+      <a href="/">Dashboard</a>
+    </nav>
+  </header>
+
+  <main class="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    Last updated: {{ last_updated | default("N/A") }} &mdash; Investment Dashboard
+  </footer>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

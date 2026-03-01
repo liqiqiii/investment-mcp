@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Investment Dashboard</title>
+  <script src="https://cdn.plot.ly/plotly-2.29.1.min.js"></script>
+  <style>
+    /* ---------- Reset & base ---------- */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #1a1a2e;
+      --card:     #16213e;
+      --accent:   #0f3460;
+      --text:     #e0e0e0;
+      --text-dim: #8a8a9a;
+      --green:    #00b894;
+      --red:      #d63031;
+      --radius:   8px;
+      --gap:      16px;
+    }
+
+    html { font-size: 14px; }
+    @media (min-width: 768px) { html { font-size: 15px; } }
+    @media (min-width: 1200px) { html { font-size: 16px; } }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    a { color: var(--green); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ---------- Header ---------- */
+    .nav-header {
+      background: var(--card);
+      border-bottom: 2px solid var(--accent);
+      padding: 0.75rem var(--gap);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-header .brand {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-header .brand .icon { font-size: 1.4rem; }
+
+    .nav-header nav { display: flex; gap: 1rem; }
+    .nav-header nav a { color: var(--text-dim); font-size: 0.9rem; }
+    .nav-header nav a:hover { color: #fff; text-decoration: none; }
+
+    /* ---------- Main content ---------- */
+    .main-content {
+      flex: 1;
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: var(--gap);
+    }
+
+    /* ---------- Hero ---------- */
+    .hero {
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+
+    .hero h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .hero .subtitle {
+      font-size: 1.1rem;
+      color: var(--text-dim);
+      margin-bottom: 2rem;
+    }
+
+    @media (min-width: 768px) {
+      .hero { padding: 4rem 1rem; }
+      .hero h1 { font-size: 2.5rem; }
+    }
+
+    /* ---------- Status banner ---------- */
+    .status-banner {
+      background: var(--card);
+      border: 1px solid var(--accent);
+      border-left: 4px solid var(--text-dim);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      max-width: 700px;
+      margin: 0 auto 3rem;
+      text-align: center;
+    }
+
+    .status-banner .status-icon {
+      font-size: 1.6rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .status-banner .status-text {
+      font-size: 0.95rem;
+      color: var(--text-dim);
+      line-height: 1.7;
+    }
+
+    /* ---------- Section ---------- */
+    .section {
+      margin-bottom: 2rem;
+    }
+
+    .section-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--accent);
+    }
+
+    /* ---------- Grid ---------- */
+    .grid {
+      display: grid;
+      gap: var(--gap);
+      grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 600px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (min-width: 900px) {
+      .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    /* ---------- Card ---------- */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .card:hover {
+      border-color: var(--green);
+      transform: translateY(-2px);
+    }
+
+    .card .card-icon {
+      font-size: 1.8rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 0.4rem;
+    }
+
+    .card .card-desc {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    .card .card-tag {
+      display: inline-block;
+      margin-top: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      background: var(--accent);
+      border-radius: 4px;
+    }
+
+    /* ---------- Footer ---------- */
+    .site-footer {
+      background: var(--card);
+      border-top: 1px solid var(--accent);
+      text-align: center;
+      padding: 0.75rem var(--gap);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-top: auto;
+    }
+
+    .site-footer a { color: var(--green); }
+  </style>
+</head>
+<body>
+
+  <header class="nav-header">
+    <div class="brand">
+      <span class="icon">📈</span>
+      <span>Investment Dashboard</span>
+    </div>
+    <nav>
+      <a href="#">Dashboard</a>
+    </nav>
+  </header>
+
+  <main class="main-content">
+
+    <!-- Hero -->
+    <div class="hero">
+      <h1>Investment Dashboard</h1>
+      <p class="subtitle">Macroeconomics &amp; Shipping Markets</p>
+    </div>
+
+    <!-- Status -->
+    <div class="status-banner">
+      <div class="status-icon">⏳</div>
+      <p class="status-text">
+        Dashboard not yet generated.<br>
+        Run the MCP server to fetch data and generate reports.
+      </p>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="section">
+      <h2 class="section-title">Quick Links</h2>
+      <div class="grid grid-3">
+
+        <div class="card">
+          <div class="card-icon">🏦</div>
+          <h3>Macro Overview</h3>
+          <p class="card-desc">Treasury yields, federal funds rate, inflation expectations, and key economic indicators.</p>
+          <span class="card-tag">Yields &amp; Rates</span>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">🚢</div>
+          <h3>Tanker Stocks</h3>
+          <p class="card-desc">Price and performance tracking for 9 major tanker companies including FRO, STNG, EURN, and more.</p>
+          <span class="card-tag">9 Companies</span>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">📊</div>
+          <h3>Shipping Indices</h3>
+          <p class="card-desc">Baltic Dry Index, VLCC spot rates, and other shipping market benchmarks.</p>
+          <span class="card-tag">BDI &amp; VLCC Rates</span>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    Powered by <a href="#">Investment MCP Server</a>
+  </footer>
+
+</body>
+</html>
