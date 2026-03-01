@@ -8,6 +8,27 @@
 
 ---
 
+## 🖥️ Live Dashboard
+
+**👉 [liqiqiii.github.io/investment-mcp](https://liqiqiii.github.io/investment-mcp/)**
+
+The dashboard updates automatically on weekdays via GitHub Actions. Open it on your phone or desktop for an at-a-glance view of all tracked instruments with interactive Plotly charts.
+
+| Report | Link |
+|--------|------|
+| **Full Dashboard** | [liqiqiii.github.io/investment-mcp](https://liqiqiii.github.io/investment-mcp/) |
+| Frontline (FRO) | [Detail page](https://liqiqiii.github.io/investment-mcp/reports/stock_FRO.html) |
+| DHT Holdings (DHT) | [Detail page](https://liqiqiii.github.io/investment-mcp/reports/stock_DHT.html) |
+| International Seaways (INSW) | [Detail page](https://liqiqiii.github.io/investment-mcp/reports/stock_INSW.html) |
+| Teekay Tankers (TNK) | [Detail page](https://liqiqiii.github.io/investment-mcp/reports/stock_TNK.html) |
+| Nordic American Tankers (NAT) | [Detail page](https://liqiqiii.github.io/investment-mcp/reports/stock_NAT.html) |
+| Scorpio Tankers (STNG) | [Detail page](https://liqiqiii.github.io/investment-mcp/reports/stock_STNG.html) |
+| TORM PLC (TRMD) | [Detail page](https://liqiqiii.github.io/investment-mcp/reports/stock_TRMD.html) |
+
+> **Macro data** (Treasury yields, CPI, GDP) will appear once a [free FRED API key](https://fred.stlouisfed.org/docs/api/api_key.html) is configured.
+
+---
+
 ## Overview
 
 Investment MCP Server is an MCP-compatible server that surfaces financial market data, interactive charting, and a curated knowledge base to any MCP client (Claude Desktop, VS Code Copilot, etc.). It is designed for individual investors who track:
@@ -43,7 +64,7 @@ Data is fetched on demand, cached locally in SQLite, and can be rendered into in
 ### Install
 
 ```bash
-git clone https://github.com/<your-org>/investment-mcp.git
+git clone https://github.com/liqiqiii/investment-mcp.git
 cd investment-mcp
 pip install -e .
 ```
@@ -193,17 +214,20 @@ shipping:BDI    — Baltic Dry Index (Shipping)
 
 ## GitHub Pages Dashboard
 
-The server can generate a full HTML dashboard that is ready for deployment to GitHub Pages.
+The live dashboard is at **[liqiqiii.github.io/investment-mcp](https://liqiqiii.github.io/investment-mcp/)** — see the top of this README for all links.
 
-### Setup
+### How It Works
 
-1. Enable GitHub Pages on your repository (Settings → Pages → Deploy from branch `gh-pages`).
-2. Set the `GITHUB_PAGES_REPO` variable in `.env`:
-   ```dotenv
-   GITHUB_PAGES_REPO=your-username/investment-mcp
-   ```
-3. Use the `generate_dashboard` tool to produce the report into `docs/reports/`.
-4. Commit and push — or configure a GitHub Actions workflow to automate daily updates.
+1. `scripts/fetch_data.py` pulls daily data from all providers and generates HTML reports into `docs/`.
+2. The `update_data.yml` GitHub Actions workflow runs this automatically every weekday at 6 AM UTC.
+3. The `deploy_pages.yml` workflow deploys `docs/` to GitHub Pages whenever it changes.
+
+### Manual Refresh
+
+```bash
+python scripts/fetch_data.py    # Fetch data + regenerate all reports
+git add docs/ && git commit -m "Update dashboard" && git push
+```
 
 Generated reports are self-contained HTML files with embedded Plotly.js — no server required.
 
