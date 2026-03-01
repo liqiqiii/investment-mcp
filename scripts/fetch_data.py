@@ -13,6 +13,7 @@ import os
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 # Ensure the project root is on sys.path when running outside an installed env
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -90,32 +91,31 @@ async def _fetch_all(registry: ProviderRegistry, cache: DataCache) -> dict[str, 
     return results
 
 
-def _compute_stats(cache: DataCache, instrument_id: str) -> dict[str, str]:
+def _compute_stats(cache: DataCache, instrument_id: str) -> dict[str, Any]:
     """Compute summary statistics from cached data."""
     df = cache.get_series(instrument_id)
     if df.empty:
-        return {}
+        return {"current": None, "min": None, "max": None, "mean": None, "pct_change": None}
 
     col = "close" if "close" in df.columns else "value"
     if col not in df.columns:
-        return {}
+        return {"current": None, "min": None, "max": None, "mean": None, "pct_change": None}
 
     series = df[col].dropna()
     if series.empty:
-        return {}
+        return {"current": None, "min": None, "max": None, "mean": None, "pct_change": None}
 
-    stats: dict[str, str] = {
-        "Latest": f"{series.iloc[-1]:,.2f}",
-        "52W High": f"{series.tail(252).max():,.2f}",
-        "52W Low": f"{series.tail(252).min():,.2f}",
+    pct_change = None
+    if len(series) >= 2 and series.iloc[-2] != 0:
+        pct_change = ((series.iloc[-1] - series.iloc[-2]) / series.iloc[-2]) * 100
+
+    return {
+        "current": float(series.iloc[-1]),
+        "min": float(series.min()),
+        "max": float(series.max()),
+        "mean": float(series.mean()),
+        "pct_change": float(pct_change) if pct_change is not None else None,
     }
-
-    if len(series) >= 2:
-        change = series.iloc[-1] - series.iloc[-2]
-        pct = (change / series.iloc[-2]) * 100 if series.iloc[-2] != 0 else 0
-        stats["Day Change"] = f"{change:+,.2f} ({pct:+.2f}%)"
-
-    return stats
 
 
 def _generate_reports(
@@ -155,8 +155,21 @@ def _generate_reports(
         )
 
         stats = _compute_stats(cache, instrument.id)
-        recent = df.tail(10).reset_index()
-        recent_data = recent.to_dict(orient="records")
+
+        # Build recent_data rows with date, value, change
+        col = "close" if "close" in df.columns else "value"
+        recent = df[[col]].dropna().tail(10)
+        recent_data = []
+        prev_val = None
+        for date_idx, row in recent.iterrows():
+            val = float(row[col])
+            change = (val - prev_val) if prev_val is not None else None
+            recent_data.append({
+                "date": str(date_idx)[:10],
+                "value": val,
+                "change": change,
+            })
+            prev_val = val
 
         # Sanitise instrument id for filename
         safe_id = instrument.id.replace(":", "_").replace("^", "")
@@ -182,6 +195,9 @@ def _generate_reports(
     charts: list[dict[str, str]] = []
     summary_cards: list[dict[str, str]] = []
 
+    # Map provider/category to dashboard section names expected by the template
+    SECTION_MAP = {"macro": "macro", "stock": "tanker", "shipping": "shipping"}
+
     for instrument in registry.list_all_instruments():
         if not fetch_results.get(instrument.id, False):
             continue
@@ -196,7 +212,13 @@ def _generate_reports(
             chart_df, title=instrument.name, y_label=instrument.unit or "Value"
         )
         safe_id = instrument.id.replace(":", "_").replace("^", "")
-        charts.append({"id": safe_id, "title": instrument.name, "json": chart_json})
+        section = SECTION_MAP.get(instrument.category, "macro")
+        charts.append({
+            "div_id": f"chart-{safe_id}",
+            "title": instrument.name,
+            "plotly_json": chart_json,
+            "section": section,
+        })
 
         latest = chart_df.iloc[-1][col] if not chart_df.empty else None
         if latest is not None:

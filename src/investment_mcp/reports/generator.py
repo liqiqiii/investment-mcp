@@ -346,7 +346,12 @@ class ReportGenerator:
             The resolved *output_path*.
         """
         template = self._env.get_template("dashboard.html")
-        html = template.render(charts=charts, summary_cards=summary_cards)
+        from datetime import datetime
+        html = template.render(
+            charts=charts,
+            summary_cards=summary_cards,
+            last_updated=datetime.now().strftime("%Y-%m-%d %H:%M UTC"),
+        )
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(html, encoding="utf-8")
         return output_path
@@ -382,11 +387,13 @@ class ReportGenerator:
             The resolved *output_path*.
         """
         template = self._env.get_template("detail.html")
+        from datetime import datetime
         html = template.render(
             instrument=instrument,
             chart_json=chart_json,
             stats=stats,
             recent_data=recent_data,
+            last_updated=datetime.now().strftime("%Y-%m-%d %H:%M UTC"),
         )
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(html, encoding="utf-8")
