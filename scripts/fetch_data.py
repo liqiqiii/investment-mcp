@@ -24,7 +24,7 @@ from dotenv import load_dotenv
 load_dotenv(_PROJECT_ROOT / ".env")
 
 from investment_mcp.cache.store import DataCache
-from investment_mcp.config import CURRENT_HOLDINGS, get_config
+from investment_mcp.config import CURRENT_HOLDINGS, VLCC_TICKERS, get_config
 from investment_mcp.providers.base import ProviderRegistry
 from investment_mcp.providers.fred import FredProvider
 from investment_mcp.providers.shipping import ShippingProvider
@@ -196,7 +196,7 @@ def _generate_reports(
     summary_cards: list[dict[str, str]] = []
 
     # Map provider/category to dashboard section names expected by the template
-    SECTION_MAP = {"macro": "macro", "stock": "tanker", "shipping": "shipping"}
+    SECTION_MAP = {"macro": "macro", "shipping": "shipping"}
 
     for instrument in registry.list_all_instruments():
         if not fetch_results.get(instrument.id, False):
@@ -212,9 +212,11 @@ def _generate_reports(
             chart_df, title=instrument.name, y_label=instrument.unit or "Value"
         )
         safe_id = instrument.id.replace(":", "_").replace("^", "")
-        # Holdings section takes priority over default category mapping
+        # Determine section: holdings > vlcc > category default
         if instrument.id in CURRENT_HOLDINGS:
             section = "holdings"
+        elif instrument.id in VLCC_TICKERS:
+            section = "vlcc"
         else:
             section = SECTION_MAP.get(instrument.category, "macro")
         charts.append({
@@ -238,6 +240,7 @@ def _generate_reports(
                 "value": f"{latest:,.2f}",
                 "change": round(change, 2) if change is not None else None,
                 "pct_change": round(pct_change, 2) if pct_change is not None else None,
+                "section": section,
             })
 
     if charts:

@@ -4,8 +4,20 @@
 
 {% block content %}
 
-{# ── Market Ticker Bar ── #}
-{% if summary_cards %}
+{# ── Tab Navigation ── #}
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('overview', this)">Overview</button>
+  <button class="tab-btn" onclick="switchTab('vlcc', this)">🚢 VLCC Tankers</button>
+</div>
+
+{# ====================================================================== #}
+{# OVERVIEW TAB                                                            #}
+{# ====================================================================== #}
+<div id="tab-overview" class="tab-panel active">
+
+{# ── Market Ticker Bar (non-VLCC only) ── #}
+{% set overview_cards = summary_cards | rejectattr("section", "equalto", "vlcc") | list %}
+{% if overview_cards %}
 <div class="section">
   <div class="section-header" onclick="toggleSection(this)">
     <h2 class="section-title">Market Ticker</h2>
@@ -14,14 +26,13 @@
   <div class="section-body">
     <div class="ticker-bar">
       <div class="ticker-track">
-        {% for card in summary_cards %}
+        {% for card in overview_cards %}
         <div class="ticker-item">
           <span class="ticker-label">{{ card.label }}</span>
           <span class="ticker-price">{{ card.value }}</span>
-          {% if card.change is not none or card.pct_change is not none %}
-          <span class="ticker-change {{ 'positive' if (card.change is not none and card.change >= 0) or (card.change is none and card.pct_change is not none and card.pct_change >= 0) else 'negative' }}">
-            {%- if card.change is not none %}{{ "+" if card.change >= 0 }}{{ "%.2f"|format(card.change) }}{% endif %}
-            {%- if card.pct_change is not none %} ({{ "+" if card.pct_change >= 0 }}{{ "%.2f"|format(card.pct_change) }}%){% endif -%}
+          {% if card.pct_change is not none %}
+          <span class="ticker-change {{ 'positive' if card.pct_change >= 0 else 'negative' }}">
+            {{ "+" if card.pct_change >= 0 }}{{ "%.2f"|format(card.pct_change) }}%
           </span>
           {% endif %}
         </div>
@@ -32,32 +43,38 @@
 </div>
 {% endif %}
 
-{# ── Summary Cards Grid ── #}
-{% if summary_cards %}
+{# ── Current Holdings ── #}
+{% set holdings_charts = charts | selectattr("section", "equalto", "holdings") | list %}
+{% if holdings_charts %}
 <div class="section">
   <div class="section-header" onclick="toggleSection(this)">
-    <h2 class="section-title">Market Overview</h2>
+    <h2 class="section-title">💼 Current Holdings</h2>
     <button class="collapse-btn" aria-label="Toggle section">▼</button>
   </div>
   <div class="section-body">
     <div class="summary-grid">
-      {% for card in summary_cards %}
-      <div class="summary-card">
+      {% for card in summary_cards if card.section == "holdings" %}
+      <div class="summary-card {{ 'positive' if card.pct_change is not none and card.pct_change >= 0 else 'negative' if card.pct_change is not none else '' }}">
         <div class="summary-card-header">
-          <span class="ticker-symbol">{{ card.label.split(' ')[0][:5] | upper }}</span>
+          <span class="ticker-symbol">{{ card.label.split(' ')[0][:6] | upper }}</span>
           <span class="company-name">{{ card.label }}</span>
         </div>
         <div class="summary-card-price">{{ card.value }}</div>
         <div class="summary-card-change">
-          {% if card.change is not none or card.pct_change is not none %}
-          <span class="{{ 'positive' if (card.change is not none and card.change >= 0) or (card.change is none and card.pct_change is not none and card.pct_change >= 0) else 'negative' }}">
-            {%- if card.change is not none %}{{ "+" if card.change >= 0 }}{{ "%.2f"|format(card.change) }}{% endif %}
-            {%- if card.pct_change is not none %} ({{ "+" if card.pct_change >= 0 }}{{ "%.2f"|format(card.pct_change) }}%){% endif -%}
+          {% if card.pct_change is not none %}
+          <span class="{{ 'positive' if card.pct_change >= 0 else 'negative' }}">
+            {{ "+" if card.change >= 0 }}{{ "%.2f"|format(card.change) }} ({{ "+" if card.pct_change >= 0 }}{{ "%.2f"|format(card.pct_change) }}%)
           </span>
-          {% else %}
-          <span class="no-change">&mdash;</span>
-          {% endif %}
+          {% else %}<span class="no-change">&mdash;</span>{% endif %}
         </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="chart-grid chart-grid-3" style="margin-top: var(--gap);">
+      {% for chart in holdings_charts %}
+      <div class="chart-wrapper">
+        <div class="chart-title">{{ chart.title }}</div>
+        <div id="{{ chart.div_id }}" class="chart-area chart-area-lg"></div>
       </div>
       {% endfor %}
     </div>
@@ -65,12 +82,12 @@
 </div>
 {% endif %}
 
-{# ── Macro Overview (only if charts exist) ── #}
+{# ── Macro Overview ── #}
 {% set macro_charts = charts | selectattr("section", "equalto", "macro") | list %}
 {% if macro_charts %}
 <div class="section">
   <div class="section-header" onclick="toggleSection(this)">
-    <h2 class="section-title">Macro Overview</h2>
+    <h2 class="section-title">📊 Macro Overview</h2>
     <button class="collapse-btn" aria-label="Toggle section">▼</button>
   </div>
   <div class="section-body">
@@ -86,49 +103,7 @@
 </div>
 {% endif %}
 
-{# ── Current Holdings (only if charts exist) ── #}
-{% set holdings_charts = charts | selectattr("section", "equalto", "holdings") | list %}
-{% if holdings_charts %}
-<div class="section">
-  <div class="section-header" onclick="toggleSection(this)">
-    <h2 class="section-title">💼 Current Holdings</h2>
-    <button class="collapse-btn" aria-label="Toggle section">▼</button>
-  </div>
-  <div class="section-body">
-    <div class="chart-grid chart-grid-3">
-      {% for chart in holdings_charts %}
-      <div class="chart-wrapper">
-        <div class="chart-title">{{ chart.title }}</div>
-        <div id="{{ chart.div_id }}" class="chart-area chart-area-lg"></div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-</div>
-{% endif %}
-
-{# ── Tanker Stocks (only if charts exist) ── #}
-{% set tanker_charts = charts | selectattr("section", "equalto", "tanker") | list %}
-{% if tanker_charts %}
-<div class="section">
-  <div class="section-header" onclick="toggleSection(this)">
-    <h2 class="section-title">Tanker Stocks</h2>
-    <button class="collapse-btn" aria-label="Toggle section">▼</button>
-  </div>
-  <div class="section-body">
-    <div class="chart-grid chart-grid-3">
-      {% for chart in tanker_charts %}
-      <div class="chart-wrapper">
-        <div class="chart-title">{{ chart.title }}</div>
-        <div id="{{ chart.div_id }}" class="chart-area chart-area-lg"></div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-</div>
-{% endif %}
-
-{# ── Shipping Indices (only if charts exist) ── #}
+{# ── Shipping Indices ── #}
 {% set shipping_charts = charts | selectattr("section", "equalto", "shipping") | list %}
 {% if shipping_charts %}
 <div class="section">
@@ -149,21 +124,118 @@
 </div>
 {% endif %}
 
+</div>{# end tab-overview #}
+
+{# ====================================================================== #}
+{# VLCC TAB                                                                #}
+{# ====================================================================== #}
+<div id="tab-vlcc" class="tab-panel">
+
+{% set vlcc_charts = charts | selectattr("section", "equalto", "vlcc") | list %}
+{% set vlcc_cards = summary_cards | selectattr("section", "equalto", "vlcc") | list %}
+{# Also include DHT from holdings in the VLCC view #}
+{% set dht_charts = charts | selectattr("section", "equalto", "holdings") | selectattr("title", "equalto", "DHT Holdings") | list %}
+{% set all_vlcc_charts = dht_charts + vlcc_charts %}
+
+{% if vlcc_cards or all_vlcc_charts %}
+<div class="section">
+  <div class="section-header" onclick="toggleSection(this)">
+    <h2 class="section-title">🚢 VLCC Tanker Fleet</h2>
+    <button class="collapse-btn" aria-label="Toggle section">▼</button>
+  </div>
+  <div class="section-body">
+    {# Ticker strip for all VLCC #}
+    <div class="ticker-bar" style="margin-bottom: var(--gap);">
+      <div class="ticker-track">
+        {# DHT from holdings cards #}
+        {% for card in summary_cards if card.section == "holdings" and "DHT" in card.label %}
+        <div class="ticker-item">
+          <span class="ticker-label" style="color: var(--yellow);">★ {{ card.label }}</span>
+          <span class="ticker-price">{{ card.value }}</span>
+          {% if card.pct_change is not none %}
+          <span class="ticker-change {{ 'positive' if card.pct_change >= 0 else 'negative' }}">
+            {{ "+" if card.pct_change >= 0 }}{{ "%.2f"|format(card.pct_change) }}%
+          </span>
+          {% endif %}
+        </div>
+        {% endfor %}
+        {% for card in vlcc_cards %}
+        <div class="ticker-item">
+          <span class="ticker-label">{{ card.label }}</span>
+          <span class="ticker-price">{{ card.value }}</span>
+          {% if card.pct_change is not none %}
+          <span class="ticker-change {{ 'positive' if card.pct_change >= 0 else 'negative' }}">
+            {{ "+" if card.pct_change >= 0 }}{{ "%.2f"|format(card.pct_change) }}%
+          </span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="chart-grid chart-grid-3">
+      {% for chart in all_vlcc_charts %}
+      <div class="chart-wrapper">
+        <div class="chart-title">{{ chart.title }}</div>
+        <div id="{{ chart.div_id }}-vlcc" class="chart-area chart-area-lg" data-mirror="{{ chart.div_id }}"></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+</div>{# end tab-vlcc #}
+
 <style>
+  /* ── Tab Navigation ── */
+  .tab-nav {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-dim);
+    font-family: var(--font);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    bottom: -1px;
+  }
+  .tab-btn:hover {
+    color: var(--text);
+    background: rgba(59, 130, 246, 0.05);
+  }
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* ── Tab Panels ── */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
   /* ── Ticker Bar ── */
   .ticker-bar {
-    background: #0d1117;
-    border-bottom: 1px solid var(--accent);
+    background: rgba(13, 17, 23, 0.8);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
     overflow-x: auto;
     overflow-y: hidden;
     white-space: nowrap;
     padding: 0.5rem 0;
-    margin: calc(-1 * var(--gap)) calc(-1 * var(--gap)) var(--gap);
     scrollbar-width: thin;
-    scrollbar-color: var(--accent) transparent;
+    scrollbar-color: var(--border) transparent;
   }
   .ticker-bar::-webkit-scrollbar { height: 4px; }
-  .ticker-bar::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
+  .ticker-bar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   .ticker-track {
     display: inline-flex;
     gap: 1.5rem;
@@ -175,18 +247,9 @@
     gap: 0.4rem;
     font-size: 0.8rem;
   }
-  .ticker-label {
-    color: var(--text-dim);
-    font-weight: 600;
-  }
-  .ticker-price {
-    color: #fff;
-    font-family: "SF Mono", "Cascadia Code", "Consolas", monospace;
-  }
-  .ticker-change {
-    font-family: "SF Mono", "Cascadia Code", "Consolas", monospace;
-    font-size: 0.75rem;
-  }
+  .ticker-label { color: var(--text-dim); font-weight: 600; }
+  .ticker-price { color: #fff; font-family: var(--mono); }
+  .ticker-change { font-family: var(--mono); font-size: 0.75rem; }
 
   /* ── Summary Cards Grid ── */
   .summary-grid {
@@ -196,60 +259,29 @@
   }
   @media (min-width: 480px)  { .summary-grid { grid-template-columns: repeat(2, 1fr); } }
   @media (min-width: 768px)  { .summary-grid { grid-template-columns: repeat(3, 1fr); } }
-  @media (min-width: 1100px) { .summary-grid { grid-template-columns: repeat(4, 1fr); } }
+  @media (min-width: 1100px) { .summary-grid { grid-template-columns: repeat(5, 1fr); } }
 
   .summary-card {
     background: var(--card);
-    border: 1px solid var(--accent);
+    border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 1rem 1.1rem;
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s, transform 0.15s;
   }
-  .summary-card:hover { border-color: var(--green); }
+  .summary-card:hover { border-color: var(--border-glow); transform: translateY(-1px); }
 
-  .summary-card-header {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    min-width: 0;
-  }
-  .ticker-symbol {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #fff;
-    flex-shrink: 0;
-  }
-  .company-name {
-    font-size: 0.72rem;
-    color: var(--text-dim);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .summary-card-price {
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #fff;
-    font-family: "SF Mono", "Cascadia Code", "Consolas", monospace;
-    letter-spacing: -0.02em;
-  }
-
-  .summary-card-change {
-    font-size: 0.85rem;
-    font-family: "SF Mono", "Cascadia Code", "Consolas", monospace;
-  }
+  .summary-card-header { display: flex; align-items: baseline; gap: 0.5rem; min-width: 0; }
+  .ticker-symbol { font-size: 0.95rem; font-weight: 700; color: var(--accent); font-family: var(--mono); flex-shrink: 0; }
+  .company-name { font-size: 0.72rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .summary-card-price { font-size: 1.5rem; font-weight: 700; color: #fff; font-family: var(--mono); letter-spacing: -0.02em; }
+  .summary-card-change { font-size: 0.8rem; font-family: var(--mono); }
   .summary-card-change .no-change { color: var(--text-dim); }
 
   /* ── Chart Grids ── */
-  .chart-grid {
-    display: grid;
-    gap: var(--gap);
-    grid-template-columns: 1fr;
-  }
+  .chart-grid { display: grid; gap: var(--gap); grid-template-columns: 1fr; }
   @media (min-width: 768px) {
     .chart-grid-2 { grid-template-columns: repeat(2, 1fr); }
     .chart-grid-3 { grid-template-columns: repeat(2, 1fr); }
@@ -257,52 +289,59 @@
   @media (min-width: 1100px) {
     .chart-grid-3 { grid-template-columns: repeat(3, 1fr); }
   }
-
   .chart-area-lg { min-height: 280px; }
   @media (min-width: 768px) { .chart-area-lg { min-height: 320px; } }
 
   /* ── Collapsible Sections ── */
   .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    user-select: none;
-    margin-bottom: 1rem;
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; user-select: none; margin-bottom: 1rem;
   }
-  .section-header .section-title {
-    margin-bottom: 0;
-  }
+  .section-header .section-title { margin-bottom: 0; }
   .collapse-btn {
-    background: none;
-    border: 1px solid #334155;
-    color: #94a3b8;
-    font-size: 0.75rem;
-    padding: 4px 8px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s;
+    background: none; border: 1px solid #334155; color: #94a3b8;
+    font-size: 0.75rem; padding: 4px 8px; border-radius: 4px;
+    cursor: pointer; transition: all 0.2s;
   }
-  .collapse-btn:hover {
-    background: #1e293b;
-    color: #f1f5f9;
-  }
-  .section-body {
-    transition: max-height 0.3s ease, opacity 0.3s ease;
-    overflow: hidden;
-  }
-  .section-body.collapsed {
-    max-height: 0 !important;
-    opacity: 0;
-    margin: 0;
-    padding: 0;
-  }
+  .collapse-btn:hover { background: #1e293b; color: #f1f5f9; }
+  .section-body { transition: max-height 0.3s ease, opacity 0.3s ease; overflow: hidden; }
+  .section-body.collapsed { max-height: 0 !important; opacity: 0; margin: 0; padding: 0; }
 </style>
 
 {% endblock %}
 
 {% block scripts %}
 <script>
+  // ── Tab switching ──
+  function switchTab(tabId, btn) {
+    document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+    document.getElementById('tab-' + tabId).classList.add('active');
+    btn.classList.add('active');
+    localStorage.setItem('active_tab', tabId);
+
+    // Render VLCC charts on first visit (lazy load)
+    if (tabId === 'vlcc' && !window._vlccRendered) {
+      window._vlccRendered = true;
+      renderVlccCharts();
+    }
+
+    // Resize visible charts
+    setTimeout(function() {
+      window.dispatchEvent(new Event('resize'));
+    }, 50);
+  }
+
+  // Restore last active tab
+  document.addEventListener('DOMContentLoaded', function() {
+    var saved = localStorage.getItem('active_tab');
+    if (saved && document.getElementById('tab-' + saved)) {
+      var btn = document.querySelector('.tab-btn[onclick*="' + saved + '"]');
+      if (btn) switchTab(saved, btn);
+    }
+  });
+
+  // ── Collapsible sections ──
   function toggleSection(header) {
     var body = header.nextElementSibling;
     var btn = header.querySelector('.collapse-btn');
@@ -329,17 +368,17 @@
     var DARK_LAYOUT = {
       paper_bgcolor: "#0a0e17",
       plot_bgcolor:  "#111827",
-      font: { color: "#e0e0e0", size: 12, family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" },
+      font: { color: "#e0e0e0", size: 12, family: "'Inter', -apple-system, sans-serif" },
       margin: { l: 50, r: 16, t: 32, b: 44 },
       xaxis: { gridcolor: "#1e293b", zerolinecolor: "#1e293b", linecolor: "#1e293b" },
       yaxis: { gridcolor: "#1e293b", zerolinecolor: "#1e293b", linecolor: "#1e293b" },
       autosize: true,
       hoverlabel: { bgcolor: "#1e293b", font: { color: "#e0e0e0" } }
     };
-
     var PLOTLY_CFG = { responsive: true, displayModeBar: false };
 
     var charts = {{ charts | tojson }};
+    window._chartData = charts;
 
     function deepMerge(target, source) {
       var result = Object.assign({}, target);
@@ -356,25 +395,34 @@
       return result;
     }
 
-    charts.forEach(function (cfg) {
-      var el = document.getElementById(cfg.div_id);
+    function renderChart(divId, plotlyJson) {
+      var el = document.getElementById(divId);
       if (!el) return;
-
       var fig;
-      try { fig = JSON.parse(cfg.plotly_json); } catch (e) { return; }
-
+      try { fig = JSON.parse(plotlyJson); } catch (e) { return; }
       var layout = deepMerge(DARK_LAYOUT, fig.layout || {});
-      // Force dark backgrounds regardless of what the backend set
       layout.paper_bgcolor = DARK_LAYOUT.paper_bgcolor;
       layout.plot_bgcolor  = DARK_LAYOUT.plot_bgcolor;
-
       Plotly.newPlot(el, fig.data || [], layout, PLOTLY_CFG);
+    }
+
+    // Render overview charts immediately
+    charts.forEach(function (cfg) {
+      renderChart(cfg.div_id, cfg.plotly_json);
     });
 
+    // Render VLCC tab charts (mirrored) on demand
+    window.renderVlccCharts = function() {
+      document.querySelectorAll('[data-mirror]').forEach(function(el) {
+        var sourceId = el.getAttribute('data-mirror');
+        var cfg = charts.find(function(c) { return c.div_id === sourceId; });
+        if (cfg) renderChart(el.id, cfg.plotly_json);
+      });
+    };
+
     window.addEventListener("resize", function () {
-      charts.forEach(function (cfg) {
-        var el = document.getElementById(cfg.div_id);
-        if (el && el.data) Plotly.Plots.resize(el);
+      document.querySelectorAll('.js-plotly-plot').forEach(function(el) {
+        if (el.offsetParent !== null) Plotly.Plots.resize(el);
       });
     });
   })();

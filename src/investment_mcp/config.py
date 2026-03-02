@@ -103,6 +103,12 @@ SHIPPING_INDICES: tuple[Instrument, ...] = (
 # ---------------------------------------------------------------------------
 CURRENT_HOLDINGS: list[str] = ["stock:DHT", "stock:IAU", "stock:TSM", "stock:GOOGL", "stock:MSFT"]
 
+# VLCC / tanker stocks — shown in separate VLCC tab (DHT appears in both holdings and VLCC)
+VLCC_TICKERS: list[str] = [
+    "stock:FRO", "stock:DHT", "stock:INSW", "stock:TNK",
+    "stock:NAT", "stock:STNG", "stock:EURN", "stock:HAFN", "stock:TRMD",
+]
+
 DEFAULT_REGISTRY = InstrumentRegistry(
     fred_series=FRED_SERIES,
     stock_tickers=STOCK_TICKERS,
