@@ -490,6 +490,36 @@
     .js-plotly-plot .plotly .modebar-btn:hover { color: var(--text) !important; }
     .js-plotly-plot .plotly .modebar-btn.active { color: var(--accent) !important; }
 
+    /* Range selector buttons */
+    .js-plotly-plot .plotly .rangeselector .button {
+      fill: #1e293b !important;
+      stroke: #334155 !important;
+      rx: 4 !important;
+    }
+    .js-plotly-plot .plotly .rangeselector .button text {
+      fill: #cbd5e1 !important;
+      font-family: 'Inter', sans-serif !important;
+      font-size: 11px !important;
+    }
+    .js-plotly-plot .plotly .rangeselector .button:hover {
+      fill: #334155 !important;
+    }
+    .js-plotly-plot .plotly .rangeselector .button.active {
+      fill: #3b82f6 !important;
+      stroke: #3b82f6 !important;
+    }
+    .js-plotly-plot .plotly .rangeselector .button.active text {
+      fill: #ffffff !important;
+    }
+
+    .js-plotly-plot .plotly .rangeslider-container {
+      background: #0f1420 !important;
+    }
+    .js-plotly-plot .plotly .rangeslider-mask-min,
+    .js-plotly-plot .plotly .rangeslider-mask-max {
+      fill: rgba(10, 14, 23, 0.7) !important;
+    }
+
     /* ========== Utility ========== */
     .mono  { font-family: var(--mono); }
     .dim   { color: var(--text-dim); }

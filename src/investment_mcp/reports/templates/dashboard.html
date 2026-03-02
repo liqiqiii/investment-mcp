@@ -6,20 +6,28 @@
 
 {# ── Market Ticker Bar ── #}
 {% if summary_cards %}
-<div class="ticker-bar">
-  <div class="ticker-track">
-    {% for card in summary_cards %}
-    <div class="ticker-item">
-      <span class="ticker-label">{{ card.label }}</span>
-      <span class="ticker-price">{{ card.value }}</span>
-      {% if card.change is not none or card.pct_change is not none %}
-      <span class="ticker-change {{ 'positive' if (card.change is not none and card.change >= 0) or (card.change is none and card.pct_change is not none and card.pct_change >= 0) else 'negative' }}">
-        {%- if card.change is not none %}{{ "+" if card.change >= 0 }}{{ "%.2f"|format(card.change) }}{% endif %}
-        {%- if card.pct_change is not none %} ({{ "+" if card.pct_change >= 0 }}{{ "%.2f"|format(card.pct_change) }}%){% endif -%}
-      </span>
-      {% endif %}
+<div class="section">
+  <div class="section-header" onclick="toggleSection(this)">
+    <h2 class="section-title">Market Ticker</h2>
+    <button class="collapse-btn" aria-label="Toggle section">▼</button>
+  </div>
+  <div class="section-body">
+    <div class="ticker-bar">
+      <div class="ticker-track">
+        {% for card in summary_cards %}
+        <div class="ticker-item">
+          <span class="ticker-label">{{ card.label }}</span>
+          <span class="ticker-price">{{ card.value }}</span>
+          {% if card.change is not none or card.pct_change is not none %}
+          <span class="ticker-change {{ 'positive' if (card.change is not none and card.change >= 0) or (card.change is none and card.pct_change is not none and card.pct_change >= 0) else 'negative' }}">
+            {%- if card.change is not none %}{{ "+" if card.change >= 0 }}{{ "%.2f"|format(card.change) }}{% endif %}
+            {%- if card.pct_change is not none %} ({{ "+" if card.pct_change >= 0 }}{{ "%.2f"|format(card.pct_change) }}%){% endif -%}
+          </span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
     </div>
-    {% endfor %}
   </div>
 </div>
 {% endif %}
@@ -27,27 +35,32 @@
 {# ── Summary Cards Grid ── #}
 {% if summary_cards %}
 <div class="section">
-  <h2 class="section-title">Market Overview</h2>
-  <div class="summary-grid">
-    {% for card in summary_cards %}
-    <div class="summary-card">
-      <div class="summary-card-header">
-        <span class="ticker-symbol">{{ card.label.split(' ')[0][:5] | upper }}</span>
-        <span class="company-name">{{ card.label }}</span>
+  <div class="section-header" onclick="toggleSection(this)">
+    <h2 class="section-title">Market Overview</h2>
+    <button class="collapse-btn" aria-label="Toggle section">▼</button>
+  </div>
+  <div class="section-body">
+    <div class="summary-grid">
+      {% for card in summary_cards %}
+      <div class="summary-card">
+        <div class="summary-card-header">
+          <span class="ticker-symbol">{{ card.label.split(' ')[0][:5] | upper }}</span>
+          <span class="company-name">{{ card.label }}</span>
+        </div>
+        <div class="summary-card-price">{{ card.value }}</div>
+        <div class="summary-card-change">
+          {% if card.change is not none or card.pct_change is not none %}
+          <span class="{{ 'positive' if (card.change is not none and card.change >= 0) or (card.change is none and card.pct_change is not none and card.pct_change >= 0) else 'negative' }}">
+            {%- if card.change is not none %}{{ "+" if card.change >= 0 }}{{ "%.2f"|format(card.change) }}{% endif %}
+            {%- if card.pct_change is not none %} ({{ "+" if card.pct_change >= 0 }}{{ "%.2f"|format(card.pct_change) }}%){% endif -%}
+          </span>
+          {% else %}
+          <span class="no-change">&mdash;</span>
+          {% endif %}
+        </div>
       </div>
-      <div class="summary-card-price">{{ card.value }}</div>
-      <div class="summary-card-change">
-        {% if card.change is not none or card.pct_change is not none %}
-        <span class="{{ 'positive' if (card.change is not none and card.change >= 0) or (card.change is none and card.pct_change is not none and card.pct_change >= 0) else 'negative' }}">
-          {%- if card.change is not none %}{{ "+" if card.change >= 0 }}{{ "%.2f"|format(card.change) }}{% endif %}
-          {%- if card.pct_change is not none %} ({{ "+" if card.pct_change >= 0 }}{{ "%.2f"|format(card.pct_change) }}%){% endif -%}
-        </span>
-        {% else %}
-        <span class="no-change">&mdash;</span>
-        {% endif %}
-      </div>
+      {% endfor %}
     </div>
-    {% endfor %}
   </div>
 </div>
 {% endif %}
@@ -56,14 +69,40 @@
 {% set macro_charts = charts | selectattr("section", "equalto", "macro") | list %}
 {% if macro_charts %}
 <div class="section">
-  <h2 class="section-title">Macro Overview</h2>
-  <div class="chart-grid chart-grid-2">
-    {% for chart in macro_charts %}
-    <div class="chart-wrapper">
-      <div class="chart-title">{{ chart.title }}</div>
-      <div id="{{ chart.div_id }}" class="chart-area chart-area-lg"></div>
+  <div class="section-header" onclick="toggleSection(this)">
+    <h2 class="section-title">Macro Overview</h2>
+    <button class="collapse-btn" aria-label="Toggle section">▼</button>
+  </div>
+  <div class="section-body">
+    <div class="chart-grid chart-grid-2">
+      {% for chart in macro_charts %}
+      <div class="chart-wrapper">
+        <div class="chart-title">{{ chart.title }}</div>
+        <div id="{{ chart.div_id }}" class="chart-area chart-area-lg"></div>
+      </div>
+      {% endfor %}
     </div>
-    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# ── Current Holdings (only if charts exist) ── #}
+{% set holdings_charts = charts | selectattr("section", "equalto", "holdings") | list %}
+{% if holdings_charts %}
+<div class="section">
+  <div class="section-header" onclick="toggleSection(this)">
+    <h2 class="section-title">💼 Current Holdings</h2>
+    <button class="collapse-btn" aria-label="Toggle section">▼</button>
+  </div>
+  <div class="section-body">
+    <div class="chart-grid chart-grid-3">
+      {% for chart in holdings_charts %}
+      <div class="chart-wrapper">
+        <div class="chart-title">{{ chart.title }}</div>
+        <div id="{{ chart.div_id }}" class="chart-area chart-area-lg"></div>
+      </div>
+      {% endfor %}
+    </div>
   </div>
 </div>
 {% endif %}
@@ -72,14 +111,19 @@
 {% set tanker_charts = charts | selectattr("section", "equalto", "tanker") | list %}
 {% if tanker_charts %}
 <div class="section">
-  <h2 class="section-title">Tanker Stocks</h2>
-  <div class="chart-grid chart-grid-3">
-    {% for chart in tanker_charts %}
-    <div class="chart-wrapper">
-      <div class="chart-title">{{ chart.title }}</div>
-      <div id="{{ chart.div_id }}" class="chart-area chart-area-lg"></div>
+  <div class="section-header" onclick="toggleSection(this)">
+    <h2 class="section-title">Tanker Stocks</h2>
+    <button class="collapse-btn" aria-label="Toggle section">▼</button>
+  </div>
+  <div class="section-body">
+    <div class="chart-grid chart-grid-3">
+      {% for chart in tanker_charts %}
+      <div class="chart-wrapper">
+        <div class="chart-title">{{ chart.title }}</div>
+        <div id="{{ chart.div_id }}" class="chart-area chart-area-lg"></div>
+      </div>
+      {% endfor %}
     </div>
-    {% endfor %}
   </div>
 </div>
 {% endif %}
@@ -88,14 +132,19 @@
 {% set shipping_charts = charts | selectattr("section", "equalto", "shipping") | list %}
 {% if shipping_charts %}
 <div class="section">
-  <h2 class="section-title">Shipping Indices</h2>
-  <div class="chart-grid chart-grid-2">
-    {% for chart in shipping_charts %}
-    <div class="chart-wrapper">
-      <div class="chart-title">{{ chart.title }}</div>
-      <div id="{{ chart.div_id }}" class="chart-area chart-area-lg"></div>
+  <div class="section-header" onclick="toggleSection(this)">
+    <h2 class="section-title">Shipping Indices</h2>
+    <button class="collapse-btn" aria-label="Toggle section">▼</button>
+  </div>
+  <div class="section-body">
+    <div class="chart-grid chart-grid-2">
+      {% for chart in shipping_charts %}
+      <div class="chart-wrapper">
+        <div class="chart-title">{{ chart.title }}</div>
+        <div id="{{ chart.div_id }}" class="chart-area chart-area-lg"></div>
+      </div>
+      {% endfor %}
     </div>
-    {% endfor %}
   </div>
 </div>
 {% endif %}
@@ -211,11 +260,70 @@
 
   .chart-area-lg { min-height: 280px; }
   @media (min-width: 768px) { .chart-area-lg { min-height: 320px; } }
+
+  /* ── Collapsible Sections ── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 1rem;
+  }
+  .section-header .section-title {
+    margin-bottom: 0;
+  }
+  .collapse-btn {
+    background: none;
+    border: 1px solid #334155;
+    color: #94a3b8;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .collapse-btn:hover {
+    background: #1e293b;
+    color: #f1f5f9;
+  }
+  .section-body {
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    overflow: hidden;
+  }
+  .section-body.collapsed {
+    max-height: 0 !important;
+    opacity: 0;
+    margin: 0;
+    padding: 0;
+  }
 </style>
 
 {% endblock %}
 
 {% block scripts %}
+<script>
+  function toggleSection(header) {
+    var body = header.nextElementSibling;
+    var btn = header.querySelector('.collapse-btn');
+    body.classList.toggle('collapsed');
+    btn.textContent = body.classList.contains('collapsed') ? '▶' : '▼';
+    var sectionId = header.querySelector('.section-title').textContent.trim();
+    localStorage.setItem('section_' + sectionId, body.classList.contains('collapsed') ? 'collapsed' : 'expanded');
+  }
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.section-header').forEach(function(header) {
+      var sectionId = header.querySelector('.section-title').textContent.trim();
+      var state = localStorage.getItem('section_' + sectionId);
+      if (state === 'collapsed') {
+        var body = header.nextElementSibling;
+        var btn = header.querySelector('.collapse-btn');
+        body.classList.add('collapsed');
+        btn.textContent = '▶';
+      }
+    });
+  });
+</script>
 <script>
   (function () {
     var DARK_LAYOUT = {

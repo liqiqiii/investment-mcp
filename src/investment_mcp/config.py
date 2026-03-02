@@ -98,6 +98,11 @@ SHIPPING_INDICES: tuple[Instrument, ...] = (
     Instrument("^BDI", "Baltic Dry Index", "Composite shipping cost index for dry bulk", "shipping", "yfinance"),
 )
 
+# ---------------------------------------------------------------------------
+# Current holdings — instruments shown in the "Current Holdings" dashboard section
+# ---------------------------------------------------------------------------
+CURRENT_HOLDINGS: list[str] = ["stock:DHT", "stock:IAU", "stock:TSM", "stock:GOOGL", "stock:MSFT"]
+
 DEFAULT_REGISTRY = InstrumentRegistry(
     fred_series=FRED_SERIES,
     stock_tickers=STOCK_TICKERS,

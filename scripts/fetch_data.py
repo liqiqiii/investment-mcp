@@ -24,7 +24,7 @@ from dotenv import load_dotenv
 load_dotenv(_PROJECT_ROOT / ".env")
 
 from investment_mcp.cache.store import DataCache
-from investment_mcp.config import get_config
+from investment_mcp.config import CURRENT_HOLDINGS, get_config
 from investment_mcp.providers.base import ProviderRegistry
 from investment_mcp.providers.fred import FredProvider
 from investment_mcp.providers.shipping import ShippingProvider
@@ -212,7 +212,11 @@ def _generate_reports(
             chart_df, title=instrument.name, y_label=instrument.unit or "Value"
         )
         safe_id = instrument.id.replace(":", "_").replace("^", "")
-        section = SECTION_MAP.get(instrument.category, "macro")
+        # Holdings section takes priority over default category mapping
+        if instrument.id in CURRENT_HOLDINGS:
+            section = "holdings"
+        else:
+            section = SECTION_MAP.get(instrument.category, "macro")
         charts.append({
             "div_id": f"chart-{safe_id}",
             "title": instrument.name,
